@@ -7,6 +7,7 @@ Library             RPA.Excel.Files
 Library             Collections
 Library             RPA.Browser.Selenium
 Library             RPA.Tables
+Library             OperatingSystem
 
 
 *** Variables ***
@@ -64,8 +65,10 @@ Get Website Contents With Codes
         ${how_much_ispaid_text}=    Get Text
         ...    css=#how-much-will-be-paid + *
         # Using the adjacent sibling combinator
-        ${benefit_environment_text}=    Get Text
-        ...    css=#how-this-option-will-benefit-the-environment + *
+
+        # ${benefit_environment_text}=    Get Text
+        # ...    css=#how-this-option-will-benefit-the-environment + *
+        ${benefit_environment_text}=    Get All Benefit Paragraph Texts
 
         ${prohibited_exists_count}=    Is Element Visible    css:#prohibited-activities
         IF    ${prohibited_exists_count}
@@ -83,15 +86,31 @@ Get Website Contents With Codes
         RETURN    Not Available    Not Available    Not Available
     END
 
-# Get Recommended Management Text
-#    ${prohibited_texts}=    Evaluate    None
-#    Run Keyword And Ignore Error
-#    ...    Execute JavaScript
-#    ...    return Array.from(document.querySelector("#recommended-management").previousElementSibling.previousElementSibling.querySelectorAll('li')).map(li => li.textContent).join('\\n');
-#    IF    '${prohibited_texts}' == 'None'
-#    Set Variable    ${prohibited_texts}    null
-#    END
-#    RETURN    ${prohibited_texts}
+Get All Benefit Paragraph Texts
+    [Documentation]    Extract and process paragraph texts for benefits excluding certain sections.
+
+    # Get all paragraph texts following the element with ID 'how-this-option-will-benefit-the-environment'
+    ${p_texts}=    Execute JavaScript
+    ...    return Array.from(document.querySelectorAll('#how-this-option-will-benefit-the-environment ~ p'))
+    ...    .map(el => el.textContent.trim())
+    ...    .filter((text, index, array) => document.querySelectorAll('#how-this-option-will-benefit-the-environment ~ p')[index].nextElementSibling
+    ...    && document.querySelectorAll('#how-this-option-will-benefit-the-environment ~ p')[index].nextElementSibling.className !== 'call-to-action');
+
+    # Get the text of elements that follow the call-to-action elements
+    ${aim_texts}=    Get Text
+    ...    css=.call-to-action ~ *
+
+    # Find the index of the aim_texts in p_texts if it exists
+    ${index}=    Evaluate    next((i for i, text in enumerate(${p_texts}) if text == """${aim_texts}"""), None)
+
+    # Slice the list of p_texts up to the found index or return the full list if index is not found
+    ${p_texts_filtered}=    Evaluate
+    ...    list(filter(lambda x: x != "", ${p_texts}))[:${index}] if ${index} is not None else list(filter(lambda x: x != "", ${p_texts}))
+
+    # Get and return the full text content for verification purposes
+    # ${text}=    Get Text
+    # ...    css=#how-this-option-will-benefit-the-environment ~ *
+    RETURN    ${p_texts_filtered}.''
 
 Get Recommended Management Text
     ${prohibited_texts}=    Execute JavaScript
