@@ -57,6 +57,7 @@ Get Column Values From Table
 Get Website Contents With Codes
     [Arguments]    ${code_to_lookup}
     Open Available Browser    https://www.gov.uk/countryside-stewardship-grants?keywords=${code_to_lookup}
+
     ${result_item}=    Is Element Visible    css:.finder-results .gem-c-document-list__item a
     IF    ${result_item}
         Click Element If Visible    css:.finder-results .gem-c-document-list__item a
@@ -76,19 +77,28 @@ Get Website Contents With Codes
         Close Browser
         RETURN    ${how_much_ispaid_text}    ${benefit_environment_text}    ${prohibited_texts}
     ELSE
-        Close Browser
         RETURN    Not Available    Not Available    Not Available
     END
 
 Get Recommended Management Text
-    ${prohibited_texts}=    Evaluate    None
-    Run Keyword And Ignore Error
+    ${prohibited_texts}=    Run Keyword And Ignore Error
     ...    Execute JavaScript
     ...    return Array.from(document.querySelector("#recommended-management").previousElementSibling.previousElementSibling.querySelectorAll('li')).map(li => li.textContent).join('\\n');
-    IF    '${prohibited_texts}' == 'None'
-        Set Variable    ${prohibited_texts}    null
-    END
     RETURN    ${prohibited_texts}
+
+# Get Recommended Management Text
+#    ${prohibited_texts}=    Run JavaScript Safely
+#    RETURN    ${prohibited_texts}
+
+# Run JavaScript Safely
+#    ${prohibited_texts}=    Evaluate    None
+#    Run Keyword And Ignore Error
+#    ...    Execute JavaScript
+#    ...    return Array.from(document.querySelector("#recommended-management").previousElementSibling.previousElementSibling.querySelectorAll('li')).map(li => li.textContent).join('\\n');
+#    IF    '${prohibited_texts}' == 'None'
+#    Set Variable    ${prohibited_texts}    null
+#    END
+#    RETURN    ${prohibited_texts}
 
 Write To Excel
     [Arguments]    ${Code_value}    ${price_to_pay}    ${benefits_to_environ}    ${prohibited_text}
@@ -105,10 +115,15 @@ Write To Excel
     ...    Price_To_Pay=${price_to_pay}
     ...    Benefits=${benefits_to_environ}
     ...    Prohibited_Actions=${prohibited_text}
+    &{table_row2}=    Create Dictionary
+    ...    Code=${Code_value}
+    ...    Price_To_Pay=${price_to_pay}
+    ...    Benefits=${benefits_to_environ}
+    ...    Prohibited_Actions=${prohibited_text}
 
     @{table_data}=    Create List
     ...    ${table_row1}
-
+    ...    ${table_row2}
     Create Table    ${table_data}
     Append Rows To Worksheet    ${table_data}    header=False
     Save Workbook
