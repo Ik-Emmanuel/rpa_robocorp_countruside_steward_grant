@@ -23,6 +23,8 @@ ${CODE_VALUE}                           AB14
 ...                                     how-this-option-will-benefit-the-environment
 ...                                     how-this-supplement-will-benefit-the-environment
 
+@{HOW_MUCH_PAID_IDS}                    how-much-will-be-paid    how-much-is-paid
+
 
 *** Tasks ***
 Countryside Stewardship grant finder
@@ -66,11 +68,13 @@ Get Website Contents With Codes
     ${result_item}=    Is Element Visible    css:.finder-results .gem-c-document-list__item a
     IF    ${result_item}
         Click Element If Visible    css:.finder-results .gem-c-document-list__item a
-        # Using the adjacent sibling combinator
-        ${how_much_ispaid_text}=    Get Text
-        ...    css=#how-much-will-be-paid + *
-        # Using the adjacent sibling combinator
 
+        # Using the adjacent sibling combinator
+        ${how_much_ispaid_text}=    Get How Much Paid text
+        # ${how_much_ispaid_text}=    Get Text
+        # ...    css=#how-much-will-be-paid + *
+
+        # Using the adjacent sibling combinator
         # ${benefit_environment_text}=    Get Text
         # ...    css=#how-this-option-will-benefit-the-environment + *
         ${benefit_environment_text}=    Get All Benefit Paragraph Texts
@@ -89,6 +93,15 @@ Get Website Contents With Codes
     ELSE
         Close Browser
         RETURN    Not Available    Not Available    Not Available
+    END
+
+Get How Much Paid text
+    FOR    ${paid_id}    IN    @{HOW_MUCH_PAID_IDS}
+        ${paid_item}=    Is Element Visible    css=#${paid_id}
+        IF    ${paid_item}
+            ${text}=    Get Text    css=#${paid_id} + *
+            RETURN    ${text}
+        END
     END
 
 Get All Benefit Paragraph Texts
