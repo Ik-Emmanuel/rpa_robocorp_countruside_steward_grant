@@ -11,12 +11,17 @@ Library             OperatingSystem
 
 
 *** Variables ***
-${INPUT_EXCEL}                          input_workbook.xlsx
+${INPUT_EXCEL}                          Scheme_codes.xlsx
 ${OUTPUT_EXCEL}                         ukgov_output_workbook.xlsx
 ${SHEET_NAME}                           Sheet1
 ${RECOMMENDED_MANAGEMENT_SELECTOR}      ${EMPTY}    # recommended-management
 ${prohibited_texts}                     No Item
 ${CODE_VALUE}                           AB14
+
+@{BENEFIT_IDS}
+...                                     how-this-item-will-benefit-the-environment
+...                                     how-this-option-will-benefit-the-environment
+...                                     how-this-supplement-will-benefit-the-environment
 
 
 *** Tasks ***
@@ -97,20 +102,47 @@ Get All Benefit Paragraph Texts
     ...    && document.querySelectorAll('#how-this-option-will-benefit-the-environment ~ p')[index].nextElementSibling.className !== 'call-to-action');
 
     # Get the text of elements that follow the call-to-action elements
-    ${aim_texts}=    Get Text
-    ...    css=.call-to-action ~ *
 
-    # Find the index of the aim_texts in p_texts if it exists
-    ${index}=    Evaluate    next((i for i, text in enumerate(${p_texts}) if text == """${aim_texts}"""), None)
+    ${Aims_section}=    Is Element Visible    css:.call-to-action
+    IF    ${Aims_section}
+        ${aim_texts}=    Get Text
+        ...    css=.call-to-action ~ *
 
-    # Slice the list of p_texts up to the found index or return the full list if index is not found
-    ${p_texts_filtered}=    Evaluate
-    ...    list(filter(lambda x: x != "", ${p_texts}))[:${index}] if ${index} is not None else list(filter(lambda x: x != "", ${p_texts}))
+        # Find the index of the aim_texts in p_texts if it exists
+        ${index}=    Evaluate    next((i for i, text in enumerate(${p_texts}) if text == """${aim_texts}"""), None)
 
-    # Get and return the full text content for verification purposes
-    # ${text}=    Get Text
-    # ...    css=#how-this-option-will-benefit-the-environment ~ *
-    RETURN    ${p_texts_filtered}.''
+        # Slice the list of p_texts up to the found index or return the full list if index is not found
+        ${p_texts_filtered}=    Evaluate
+        ...    list(filter(lambda x: x != "", ${p_texts}))[:${index}] if ${index} != None else list(filter(lambda x: x != "", ${p_texts}))
+
+        # Get and return the full text content for benefit-the-environment
+        # ${text}=    Get Text
+        # ...    css=#how-this-option-will-benefit-the-environment ~ *
+        RETURN    ${p_texts_filtered}.''
+    ELSE
+        # # Get and return the full text content for benefit-the-environment
+        # ${benefit_item}=    Is Element Visible    css:#how-this-item-will-benefit-the-environment
+        # IF    ${benefit_item}
+        #    ${text}=    Get Text
+        #    ...    css=#how-this-item-will-benefit-the-environment + *
+        #    RETURN    ${text}
+        # ELSE
+        #    ${text}=    Get Text
+        #    ...    css=#how-this-option-will-benefit-the-environment + *
+        #    RETURN    ${text}
+
+        #    # next how-this-supplement-will-benefit-the-environment
+        # END
+
+        # Loop through possible IDs and return the first found text
+        FOR    ${id}    IN    @{BENEFIT_IDS}
+            ${benefit_item}=    Is Element Visible    css=#${id}
+            IF    ${benefit_item}
+                ${text}=    Get Text    css=#${id} + *
+                RETURN    ${text}
+            END
+        END
+    END
 
 Get Recommended Management Text
     ${prohibited_texts}=    Execute JavaScript
