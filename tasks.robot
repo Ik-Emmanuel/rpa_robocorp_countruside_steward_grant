@@ -69,7 +69,10 @@ Get Website Contents With Codes
 
         ${prohibited_exists_count}=    Is Element Visible    css:#prohibited-activities
         IF    ${prohibited_exists_count}
-            ${prohibited_texts}=    Get Recommended Management Text
+            ${result}=    Run Keyword And Ignore Error    Get Recommended Management Text
+            ${status}=    Set Variable If    '${result[0]}' == 'PASS'    PASS    FAIL
+            ${prohibited_texts}=    Set Variable If    '${status}' == 'PASS'    ${result[1]}    None
+            Log    ${prohibited_texts}
         ELSE
             Set Variable    ${prohibited_texts}    No item
         END
@@ -80,25 +83,26 @@ Get Website Contents With Codes
         RETURN    Not Available    Not Available    Not Available
     END
 
+# Get Recommended Management Text
+#    ${prohibited_texts}=    Evaluate    None
+#    Run Keyword And Ignore Error
+#    ...    Execute JavaScript
+#    ...    return Array.from(document.querySelector("#recommended-management").previousElementSibling.previousElementSibling.querySelectorAll('li')).map(li => li.textContent).join('\\n');
+#    IF    '${prohibited_texts}' == 'None'
+#    Set Variable    ${prohibited_texts}    null
+#    END
+#    RETURN    ${prohibited_texts}
+
 Get Recommended Management Text
-    ${prohibited_texts}=    Evaluate    None
-    Run Keyword And Ignore Error
-    ...    Execute JavaScript
+    ${prohibited_texts}=    Execute JavaScript
     ...    return Array.from(document.querySelector("#recommended-management").previousElementSibling.previousElementSibling.querySelectorAll('li')).map(li => li.textContent).join('\\n');
-    IF    '${prohibited_texts}' == 'None'
-        Set Variable    ${prohibited_texts}    null
-    END
+
     RETURN    ${prohibited_texts}
 
 Write To Excel
     [Arguments]    ${Code_value}    ${price_to_pay}    ${benefits_to_environ}    ${prohibited_text}
     # Create Workbook    ${OUTPUT_EXCEL}
     Open Workbook    ${OUTPUT_EXCEL}
-
-    # @{table_column}=    Create List    Code    Price_To_Pay    Benefits    Prohibited_Actions
-    # @{table_data}=    Create List    ${code_value}    ${price_to_pay}    ${benefits_to_environ}    ${prohibited_text}
-    # &{table}=    Create Dictionary    column=${table_column}    data=${table_data}
-    # Create Table    ${_table_}
 
     &{table_row1}=    Create Dictionary
     ...    Code=${Code_value}
